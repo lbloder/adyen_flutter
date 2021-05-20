@@ -19,6 +19,5 @@ Flutter plugin to integrate with the Android and iOS libraries of Adyen.
   s.dependency 'Adyen/Card', '3.8.3'
   s.dependency 'Adyen/DropIn', '3.8.3'
 
-  s.ios.deployment_target = '12.0'
+  s.ios.deployment_target = '10.0'
 end
-
