@@ -1,12 +1,10 @@
 package app.adyen.flutter_adyen
 
-import Payment
-import PaymentsRequest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import app.adyen.flutter_adyen.models.LineItem
+import app.adyen.flutter_adyen.models.*
 import com.adyen.checkout.base.model.PaymentMethodsApiResponse
 import com.adyen.checkout.base.model.payments.request.*
 import com.adyen.checkout.card.CardConfiguration
@@ -23,7 +21,6 @@ import com.adyen.checkout.redirect.RedirectComponent
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.squareup.moshi.Moshi
-import createAmount
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -35,7 +32,6 @@ import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import org.json.JSONObject
 import retrofit2.Call
-import serializePaymentsRequest
 import java.io.IOException
 import java.util.*
 import kotlin.collections.HashMap

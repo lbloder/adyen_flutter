@@ -29,7 +29,7 @@ data class Payment(
 
 data class PaymentsRequest(
         val payment: Payment,
-        val additionalData: Map<String, String>
+        val additionalData: Map<String, String>?
 ): Serializable
 
 data class AdditionalData(val allow3DS2: String = "true")
