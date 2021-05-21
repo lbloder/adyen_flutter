@@ -8,6 +8,7 @@
 
 package app.adyen.flutter_adyen
 
+import android.util.Log
 import com.adyen.checkout.base.model.paymentmethods.InputDetail
 import com.adyen.checkout.base.model.payments.request.*
 import com.adyen.checkout.base.model.payments.response.*
@@ -29,7 +30,7 @@ interface CheckoutApiService {
     fun details(@Body detailsRequest: RequestBody): Call<ResponseBody>
 }
 
-class HeaderInterceptor(private val headers: HashMap<String, String>) : Interceptor {
+class HeaderInterceptor(private val headers: Map<String, String>) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response = chain.run {
         val builder = request().newBuilder()
         headers.keys.forEach { builder.addHeader(it, headers[it] ?: "") }
@@ -37,7 +38,7 @@ class HeaderInterceptor(private val headers: HashMap<String, String>) : Intercep
     }
 }
 
-fun getService(headers: HashMap<String, String>, baseUrl: String): CheckoutApiService {
+fun getService(headers: Map<String, String>, baseUrl: String): CheckoutApiService {
     val converter = MoshiConverterFactory.create()
 
     val client = OkHttpClient.Builder().addInterceptor(HeaderInterceptor(headers)).build()

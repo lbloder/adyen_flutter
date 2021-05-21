@@ -34,6 +34,7 @@ public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
     var lineItemJson: [String: String]?
     var shopperLocale: String?
     var additionalData:  [String: String]?
+    var headers:  [String: String]?
 
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -52,6 +53,7 @@ public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
         returnUrl = arguments?["returnUrl"] as? String
         shopperReference = arguments?["shopperReference"] as? String
         shopperLocale = String((arguments?["locale"] as? String)?.split(separator: "_").last ?? "DE")
+        headers = arguments?["headers"] as? [String: String]
         mResult = result
 
         guard let paymentData = paymentMethodsResponse?.data(using: .utf8),
@@ -96,7 +98,7 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-
+        headers?.forEach { key, value in request.addValue(value, forHTTPHeaderField: key) }
         let amountAsInt = Int(amount ?? "0")
         // prepare json data
         let paymentMethod = data.paymentMethod.encodable
@@ -157,6 +159,7 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        headers?.forEach { key, value in request.addValue(value, forHTTPHeaderField: key) }
         let detailsRequest = DetailsRequest(paymentData: data.paymentData ?? "", details: data.details.encodable)
         do {
             let detailsRequestData = try JSONEncoder().encode(detailsRequest)
