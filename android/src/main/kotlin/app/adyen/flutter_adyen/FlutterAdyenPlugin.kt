@@ -75,10 +75,10 @@ class FlutterAdyenPlugin(private val activity: Activity) : MethodCallHandler, Pl
 
                 @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
                 val lineItemString = JSONObject(lineItem).toString()
-                val additionalDataString = JSONObject(additionalData).toString()
+                val additionalDataString = additionalData?.let { JSONObject(additionalData).toString() }
                 val localeString = call.argument<String>("locale") ?: "de_DE"
                 val countryCode = localeString.split("_").last()
-                val headersString = JSONObject(headers).toString()
+                val headersString = headers?.let { JSONObject(headers).toString() }
 
                 var environment = Environment.TEST
                 if (env == "LIVE_US") {
@@ -165,7 +165,7 @@ class AdyenDropinService : DropInService() {
         val currency = sharedPref.getString("currency", "UNDEFINED_STR")
         val countryCode = sharedPref.getString("countryCode", "DE")
         val lineItemString = sharedPref.getString("lineItem", "UNDEFINED_STR")
-        val additionalDataString = sharedPref.getString("additionalData", "UNDEFINED_STR")
+        val additionalDataString = sharedPref.getString("additionalData", null)
         val headersString = sharedPref.getString("headers", null)
         val uuid: UUID = UUID.randomUUID()
         val reference: String = uuid.toString()
@@ -177,7 +177,7 @@ class AdyenDropinService : DropInService() {
 
         val gson = Gson()
 
-        val additionalData = gson.fromJson<Map<String, String>>(additionalDataString ?: "")
+        val additionalData = additionalDataString?.let { gson.fromJson<Map<String, String>>(it) } ?: emptyMap()
         val headers = headersString?.let { gson.fromJson<Map<String, String>>(it) }
         val serializedPaymentComponentData = PaymentComponentData.SERIALIZER.deserialize(paymentComponentData)
 
