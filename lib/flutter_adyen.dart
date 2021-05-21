@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+import 'package:uuid/uuid.dart';
 
 class FlutterAdyen {
   static const MethodChannel _channel = const MethodChannel('flutter_adyen');
@@ -18,6 +19,7 @@ class FlutterAdyen {
       String shopperReference,
       Map<String, String> additionalData,
       Map<String, String> headers,
+      String reference,
       environment = 'TEST'}) async {
     Map<String, dynamic> args = {};
     args.putIfAbsent('paymentMethods', () => paymentMethods);
@@ -33,6 +35,7 @@ class FlutterAdyen {
     args.putIfAbsent('environment', () => environment);
     args.putIfAbsent('shopperReference', () => shopperReference);
     args.putIfAbsent('headers', () => headers);
+    args.putIfAbsent('reference', () => reference ?? Uuid().v4().toString());
 
     final String response = await _channel.invokeMethod('openDropIn', args);
     return response;

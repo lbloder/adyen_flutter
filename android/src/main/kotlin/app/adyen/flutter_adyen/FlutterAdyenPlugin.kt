@@ -72,6 +72,7 @@ class FlutterAdyenPlugin(private val activity: Activity) : MethodCallHandler, Pl
                 val lineItem = call.argument<Map<String, String>>("lineItem")
                 val shopperReference = call.argument<String>("shopperReference")
                 val headers = call.argument<Map<String, String>>("headers")
+                val reference = call.argument<String>("reference")
 
                 @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
                 val lineItemString = JSONObject(lineItem).toString()
@@ -114,6 +115,7 @@ class FlutterAdyenPlugin(private val activity: Activity) : MethodCallHandler, Pl
                         putString("additionalData", additionalDataString)
                         putString("shopperReference", shopperReference)
                         putString("headers", headersString)
+                        putString("reference", reference)
                         commit()
                     }
 
@@ -168,7 +170,7 @@ class AdyenDropinService : DropInService() {
         val additionalDataString = sharedPref.getString("additionalData", null)
         val headersString = sharedPref.getString("headers", null)
         val uuid: UUID = UUID.randomUUID()
-        val reference: String = uuid.toString()
+        val reference = sharedPref.getString("reference", uuid.toString())
         val shopperReference = sharedPref.getString("shopperReference", null)
 
         val moshi = Moshi.Builder().build()
