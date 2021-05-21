@@ -1,3 +1,5 @@
+package app.adyen.flutter_adyen.models
+
 import app.adyen.flutter_adyen.models.LineItem
 import com.adyen.checkout.base.model.payments.Amount
 import com.adyen.checkout.base.model.payments.request.PaymentMethodDetails
