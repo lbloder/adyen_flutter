@@ -179,7 +179,7 @@ class AdyenDropinService : DropInService() {
 
         val gson = Gson()
 
-        val additionalData = additionalDataString?.let { gson.fromJson<Map<String, String>>(it) } ?: emptyMap()
+        val additionalData = additionalDataString?.let { gson.fromJson<Map<String, String>>(it) }
         val headers = headersString?.let { gson.fromJson<Map<String, String>>(it) }
         val serializedPaymentComponentData = PaymentComponentData.SERIALIZER.deserialize(paymentComponentData)
 
@@ -268,7 +268,7 @@ class AdyenDropinService : DropInService() {
 }
 
 
-fun createPaymentsRequest(context: Context, lineItem: LineItem?, paymentComponentData: PaymentComponentData<out PaymentMethodDetails>, amount: String, currency: String, reference: String, shopperReference: String?, countryCode: String, additionalData: Map<String, String>): PaymentsRequest {
+fun createPaymentsRequest(context: Context, lineItem: LineItem?, paymentComponentData: PaymentComponentData<out PaymentMethodDetails>, amount: String, currency: String, reference: String, shopperReference: String?, countryCode: String, additionalData: Map<String, String>?): PaymentsRequest {
     @Suppress("UsePropertyAccessSyntax")
     return PaymentsRequest(
             payment = Payment(paymentComponentData.getPaymentMethod() as PaymentMethodDetails,
