@@ -6,6 +6,7 @@ import android.content.Intent
 import android.util.Log
 import app.adyen.flutter_adyen.models.*
 import com.adyen.checkout.base.model.PaymentMethodsApiResponse
+import com.adyen.checkout.base.model.payments.Amount
 import com.adyen.checkout.base.model.payments.request.*
 import com.adyen.checkout.card.CardConfiguration
 import com.adyen.checkout.core.api.Environment
@@ -115,16 +116,25 @@ class FlutterAdyenPlugin(private val activity: Activity) : MethodCallHandler, Pl
                         commit()
                     }
 
-                    val dropInConfiguration = DropInConfiguration.Builder(activity, resultIntent, AdyenDropinService::class.java)
+                    val dropInConfigurationBuilder = DropInConfiguration.Builder(activity, resultIntent, AdyenDropinService::class.java)
                             .setClientKey(clientKey ?: "")
                             .addCardConfiguration(cardConfiguration)
-                            .build()
+
+                    if (currency != null && amount != null) {
+                        dropInConfigurationBuilder.setAmount(
+                            Amount().apply {
+                                this.value = amount.toInt()
+                                this.currency = currency
+                            }
+                        )
+                    }
+
+                    val dropInConfiguration = dropInConfigurationBuilder.build()
                     DropIn.startPayment(activity, paymentMethodsApiResponse, dropInConfiguration)
                     flutterResult = res
                 } catch (e: Throwable) {
                     res.error("PAYMENT_ERROR", "${e.printStackTrace()}", "")
                 }
-
 
             }
             else -> {

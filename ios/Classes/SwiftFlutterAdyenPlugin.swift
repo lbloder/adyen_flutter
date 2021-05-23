@@ -36,7 +36,6 @@ public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
     var additionalData:  [String: String]?
     var headers:  [String: String]?
 
-
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         guard call.method.elementsEqual("openDropIn") else { return }
 
@@ -75,6 +74,12 @@ public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
         configuration.card.showsHolderNameField = true
         configuration.clientKey = clientKey
         dropInComponent = DropInComponent(paymentMethods: paymentMethods, paymentMethodsConfiguration: configuration)
+        
+        if let paymentCurrency = currency, let amountString = amount, let paymentAmount = Int(amountString) {
+            dropInComponent?.payment = Adyen.Payment(amount: Adyen.Payment.Amount(value: paymentAmount,
+                                                                     currencyCode: paymentCurrency))
+        }
+        
         dropInComponent?.delegate = self
         dropInComponent?.environment = .test
 
