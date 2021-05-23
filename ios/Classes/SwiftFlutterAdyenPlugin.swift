@@ -42,7 +42,7 @@ public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
 
         let arguments = call.arguments as? [String: Any]
         let paymentMethodsResponse = arguments?["paymentMethods"] as? String
-        baseURL = arguments?["baseUrl"] as? String
+        let rawBaseURL = arguments?["baseUrl"] as? String
         additionalData = arguments?["additionalData"] as? [String: String]
         clientKey = arguments?["clientKey"] as? String
         currency = arguments?["currency"] as? String
@@ -55,6 +55,16 @@ public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
         shopperLocale = String((arguments?["locale"] as? String)?.split(separator: "_").last ?? "DE")
         headers = arguments?["headers"] as? [String: String]
         mResult = result
+
+        guard let rawUrl = rawBaseURL else {
+            return
+        }
+
+        if rawUrl.last == "/" {
+            baseURL = String(rawUrl.dropLast())
+        } else {
+            baseURL = rawUrl
+        }
 
         guard let paymentData = paymentMethodsResponse?.data(using: .utf8),
               let paymentMethods = try? JSONDecoder().decode(PaymentMethods.self, from: paymentData) else {
