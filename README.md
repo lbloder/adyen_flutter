@@ -135,6 +135,15 @@ You need to add a URL_SCHEME if you do not have one yet.
 
 [Here is how to add one.](https://developer.apple.com/documentation/uikit/inter-process_communication/allowing_apps_and_websites_to_link_to_your_content/defining_a_custom_url_scheme_for_your_app)
 
+In order to handle the redirect add the following lines to your AppDelegate.swift
+
+```
+  override  func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+       RedirectComponent.applicationDidOpen(from: url)
+     
+       return true
+    }
+```
 
 ## Flutter Implementation
 To start a Payment you need to call the plugin like so:
@@ -144,6 +153,7 @@ To start a Payment you need to call the plugin like so:
       String dropInResponse = await FlutterAdyen.openDropIn(
           paymentMethods: paymentMethods,  // the result of your payment methods call
           baseUrl: 'https://your-server.com/',
+          merchantAccount: <ADYEN_MERCHANT_ACCOUNT>,
           clientKey: <ADYEN_CLIENT_KEY>,
           amount: '1000', // amount in cents
           lineItem: {'id': 'your product ID', 'description': 'Your product description'},
