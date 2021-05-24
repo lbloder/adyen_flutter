@@ -70,6 +70,7 @@ class FlutterAdyenPlugin(private val activity: Activity) : MethodCallHandler, Pl
                 val shopperReference = call.argument<String>("shopperReference")
                 val headers = call.argument<Map<String, String>>("headers")
                 val reference = call.argument<String>("reference")
+                val merchantAccount = call.argument<String>("merchantAccount")
 
                 @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
                 val lineItemString = JSONObject(lineItem).toString()
@@ -113,6 +114,7 @@ class FlutterAdyenPlugin(private val activity: Activity) : MethodCallHandler, Pl
                         putString("shopperReference", shopperReference)
                         putString("headers", headersString)
                         putString("reference", reference)
+                        putString("merchantAccount", merchantAccount)
                         commit()
                     }
 
@@ -178,6 +180,7 @@ class AdyenDropinService : DropInService() {
         val uuid: UUID = UUID.randomUUID()
         val reference = sharedPref.getString("reference", uuid.toString())
         val shopperReference = sharedPref.getString("shopperReference", null)
+        val merchantAccount = sharedPref.getString("merchantAccount", null) ?: ""
 
         val moshi = Moshi.Builder().build()
         val jsonAdapter = moshi.adapter(LineItem::class.java)
@@ -195,7 +198,7 @@ class AdyenDropinService : DropInService() {
         val paymentsRequest = createPaymentsRequest(this@AdyenDropinService, lineItem, serializedPaymentComponentData, amount
                 ?: "", currency ?: "", reference
                 ?: "", shopperReference = shopperReference, countryCode = countryCode
-                ?: "DE", additionalData = additionalData)
+                ?: "DE", additionalData = additionalData, merchantAccount = merchantAccount)
         val paymentsRequestJson = serializePaymentsRequest(paymentsRequest)
 
         val requestBody = RequestBody.create(MediaType.parse("application/json"), paymentsRequestJson.toString())
@@ -274,7 +277,7 @@ class AdyenDropinService : DropInService() {
 }
 
 
-fun createPaymentsRequest(context: Context, lineItem: LineItem?, paymentComponentData: PaymentComponentData<out PaymentMethodDetails>, amount: String, currency: String, reference: String, shopperReference: String?, countryCode: String, additionalData: Map<String, String>?): PaymentsRequest {
+fun createPaymentsRequest(context: Context, lineItem: LineItem?, paymentComponentData: PaymentComponentData<out PaymentMethodDetails>, amount: String, currency: String, reference: String, shopperReference: String?, countryCode: String, additionalData: Map<String, String>?, merchantAccount: String): PaymentsRequest {
     @Suppress("UsePropertyAccessSyntax")
     return PaymentsRequest(
             payment = Payment(paymentComponentData.getPaymentMethod() as PaymentMethodDetails,
@@ -284,7 +287,8 @@ fun createPaymentsRequest(context: Context, lineItem: LineItem?, paymentComponen
                     reference,
                     RedirectComponent.getReturnUrl(context),
                     lineItems = listOf(lineItem),
-                    shopperReference = shopperReference),
+                    shopperReference = shopperReference,
+                    merchantAccount = merchantAccount),
             additionalData = additionalData
 
     )

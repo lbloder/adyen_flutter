@@ -24,7 +24,8 @@ data class Payment(
         val channel: String = "Android",
         val lineItems: List<LineItem?>,
         val additionalData: AdditionalData = AdditionalData(allow3DS2 = "true"),
-        val shopperReference: String?
+        val shopperReference: String?,
+        val merchantAccount: String
 ): Serializable
 
 data class PaymentsRequest(
