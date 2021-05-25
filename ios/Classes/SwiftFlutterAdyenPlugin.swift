@@ -125,7 +125,7 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
             self.didFail(with: PaymentError(), from: component)
             return
         }
-        let paymentRequest = PaymentRequest(payment: Payment( paymentMethod: paymentMethod, lineItems: lineItems ?? [], currency: currency ?? "", amount: amountAsInt ?? 0, returnUrl: returnUrl ?? "", storePayment: data.storePaymentMethod, shopperReference: shopperReference, countryCode: shopperLocale, merchantAccount: merchantAccount ?? ""), additionalData:additionalData ?? [String: String]())
+        let paymentRequest = PaymentRequest(payment: Payment( paymentMethod: paymentMethod, lineItems: lineItems ?? [], currency: currency ?? "", amount: amountAsInt ?? 0, returnUrl: returnUrl ?? "", storePayment: data.storePaymentMethod, shopperReference: shopperReference, reference: reference, countryCode: shopperLocale, merchantAccount: merchantAccount ?? ""), additionalData:additionalData ?? [String: String]())
 
         do {
             let jsonData = try JSONEncoder().encode(paymentRequest)
@@ -229,19 +229,20 @@ struct Payment : Encodable {
     let channel: String = "iOS"
     let additionalData = ["allow3DS2":"true"]
     let amount: Amount
-    let reference: String = UUID().uuidString
+    let reference: String
     let returnUrl: String
     let storePaymentMethod: Bool
     let shopperReference: String?
     let countryCode: String?
     let merchantAccount: String
 
-    init(paymentMethod: AnyEncodable, lineItems: [LineItem], currency: String, amount: Int, returnUrl: String, storePayment: Bool, shopperReference: String?, countryCode: String?, merchantAccount: String) {
+    init(paymentMethod: AnyEncodable, lineItems: [LineItem], currency: String, amount: Int, returnUrl: String, storePayment: Bool, shopperReference: String?, reference: String?, countryCode: String?, merchantAccount: String) {
         self.paymentMethod = paymentMethod
         self.lineItems = lineItems
         self.amount = Amount(currency: currency, value: amount)
         self.returnUrl = returnUrl
         self.shopperReference = shopperReference
+        self.reference = reference ?? UUID().uuidString
         self.storePaymentMethod = storePayment
         self.countryCode = countryCode
         self.merchantAccount = merchantAccount
