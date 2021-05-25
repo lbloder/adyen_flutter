@@ -31,7 +31,7 @@ public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
     var topController: UIViewController?
     var environment: String?
     var shopperReference: String?
-    var lineItemJson: [String: String]?
+    var lineItemString: String?
     var shopperLocale: String?
     var additionalData:  [String: String]?
     var headers:  [String: String]?
@@ -46,7 +46,7 @@ public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
         clientKey = arguments?["clientKey"] as? String
         currency = arguments?["currency"] as? String
         amount = arguments?["amount"] as? String
-        lineItemJson = arguments?["lineItem"] as? [String: String]
+        lineItemString = arguments?["lineItem"] as? String
         environment = arguments?["environment"] as? String
         reference = arguments?["reference"] as? String
         returnUrl = arguments?["returnUrl"] as? String
@@ -80,7 +80,7 @@ public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
             dropInComponent?.payment = Adyen.Payment(amount: Adyen.Payment.Amount(value: paymentAmount,
                                                                      currencyCode: paymentCurrency))
         }
-        
+    
         dropInComponent?.delegate = self
         dropInComponent?.environment = .test
 
@@ -118,12 +118,14 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
         let amountAsInt = Int(amount ?? "0")
         // prepare json data
         let paymentMethod = data.paymentMethod.encodable
-        let lineItem = try? JSONDecoder().decode(LineItem.self, from: JSONSerialization.data(withJSONObject: lineItemJson ?? ["":""]) )
-        if lineItem == nil {
+        let lineItemJsonData = lineItemString?.data(using: .utf8)
+        let lineItems = try? JSONDecoder().decode([LineItem].self, from: lineItemJsonData ?? Data())
+
+        if lineItems == nil {
             self.didFail(with: PaymentError(), from: component)
             return
         }
-        let paymentRequest = PaymentRequest(payment: Payment( paymentMethod: paymentMethod, lineItem: lineItem ?? LineItem(id: "", description: ""), currency: currency ?? "", amount: amountAsInt ?? 0, returnUrl: returnUrl ?? "", storePayment: data.storePaymentMethod, shopperReference: shopperReference, countryCode: shopperLocale, merchantAccount: merchantAccount ?? ""), additionalData:additionalData ?? [String: String]())
+        let paymentRequest = PaymentRequest(payment: Payment( paymentMethod: paymentMethod, lineItems: lineItems ?? [], currency: currency ?? "", amount: amountAsInt ?? 0, returnUrl: returnUrl ?? "", storePayment: data.storePaymentMethod, shopperReference: shopperReference, countryCode: shopperLocale, merchantAccount: merchantAccount ?? ""), additionalData:additionalData ?? [String: String]())
 
         do {
             let jsonData = try JSONEncoder().encode(paymentRequest)
@@ -234,9 +236,9 @@ struct Payment : Encodable {
     let countryCode: String?
     let merchantAccount: String
 
-    init(paymentMethod: AnyEncodable, lineItem: LineItem, currency: String, amount: Int, returnUrl: String, storePayment: Bool, shopperReference: String?, countryCode: String?, merchantAccount: String) {
+    init(paymentMethod: AnyEncodable, lineItems: [LineItem], currency: String, amount: Int, returnUrl: String, storePayment: Bool, shopperReference: String?, countryCode: String?, merchantAccount: String) {
         self.paymentMethod = paymentMethod
-        self.lineItems = [lineItem]
+        self.lineItems = lineItems
         self.amount = Amount(currency: currency, value: amount)
         self.returnUrl = returnUrl
         self.shopperReference = shopperReference
@@ -247,8 +249,13 @@ struct Payment : Encodable {
 }
 
 struct LineItem: Codable {
-    let id: String
-    let description: String
+    let quantity: Int?
+    let amountExcludingTax: Int?
+    let taxPercentage: Int?
+    let description: String?
+    let id: String?
+    let amountIncludingTax: Int?
+    let taxCategory: String?
 }
 
 struct Amount: Codable {

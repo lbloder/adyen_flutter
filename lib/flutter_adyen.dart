@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
@@ -11,7 +12,7 @@ class FlutterAdyen {
       String baseUrl,
       String clientKey,
       String publicKey,
-      lineItem,
+      List<LineItem> lineItem,
       String locale,
       String amount,
       String currency,
@@ -31,7 +32,7 @@ class FlutterAdyen {
     args.putIfAbsent('amount', () => amount);
     args.putIfAbsent('locale', () => locale);
     args.putIfAbsent('currency', () => currency);
-    args.putIfAbsent('lineItem', () => lineItem);
+    args.putIfAbsent('lineItem', () => jsonEncode(lineItem));
     args.putIfAbsent('returnUrl', () => returnUrl);
     args.putIfAbsent('environment', () => environment);
     args.putIfAbsent('shopperReference', () => shopperReference);
@@ -41,5 +42,37 @@ class FlutterAdyen {
 
     final String response = await _channel.invokeMethod('openDropIn', args);
     return response;
+  }
+}
+
+class LineItem {
+  final int quantity;
+  final int amountExcludingTax;
+  final int taxPercentage;
+  final String description;
+  final String id;
+  final int amountIncludingTax;
+  final String taxCategory;
+
+  LineItem({
+    this.quantity,
+    this.amountExcludingTax,
+    this.amountIncludingTax,
+    this.taxPercentage,
+    this.taxCategory: "Low",
+    this.description,
+    this.id
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'quantity': quantity,
+      'amountExcludingTax': amountExcludingTax,
+      'amountIncludingTax': amountIncludingTax,
+      'taxPercentage': taxPercentage,
+      'taxCategory': taxCategory,
+      'description': description,
+      'id': id,
+    };
   }
 }
