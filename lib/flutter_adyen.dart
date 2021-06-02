@@ -2,26 +2,25 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
-import 'package:uuid/uuid.dart';
 
 class FlutterAdyen {
   static const MethodChannel _channel = const MethodChannel('flutter_adyen');
 
   static Future<String> openDropIn(
       {paymentMethods,
-      String baseUrl,
-      String clientKey,
-      String publicKey,
-      List<LineItem> lineItem,
-      String locale,
-      String amount,
-      String currency,
-      String returnUrl,
-      String shopperReference,
-      Map<String, String> additionalData,
-      Map<String, String> headers,
-      String reference,
-      String merchantAccount,
+      required String baseUrl,
+      required String clientKey,
+      required String publicKey,
+      List<LineItem>? lineItem,
+      required String locale,
+      required String amount,
+      required String currency,
+      String? returnUrl,
+      String? shopperReference,
+      Map<String, String>? additionalData,
+      Map<String, String>? headers,
+      required String reference,
+      required String merchantAccount,
       environment = 'TEST'}) async {
     Map<String, dynamic> args = {};
     args.putIfAbsent('paymentMethods', () => paymentMethods);
@@ -37,7 +36,7 @@ class FlutterAdyen {
     args.putIfAbsent('environment', () => environment);
     args.putIfAbsent('shopperReference', () => shopperReference);
     args.putIfAbsent('headers', () => headers);
-    args.putIfAbsent('reference', () => reference ?? Uuid().v4().toString());
+    args.putIfAbsent('reference', () => reference);
     args.putIfAbsent('merchantAccount', () => merchantAccount);
 
     final String response = await _channel.invokeMethod('openDropIn', args);
@@ -47,21 +46,21 @@ class FlutterAdyen {
 
 class LineItem {
   final int quantity;
-  final int amountExcludingTax;
-  final int taxPercentage;
-  final String description;
+  final int? amountExcludingTax;
+  final int? taxPercentage;
+  final String? description;
   final String id;
-  final int amountIncludingTax;
-  final String taxCategory;
+  final int? amountIncludingTax;
+  final String? taxCategory;
 
   LineItem({
-    this.quantity,
+    required this.quantity,
     this.amountExcludingTax,
     this.amountIncludingTax,
     this.taxPercentage,
     this.taxCategory: "Low",
     this.description,
-    this.id
+    required this.id
   });
 
   Map<String, dynamic> toJson() {
