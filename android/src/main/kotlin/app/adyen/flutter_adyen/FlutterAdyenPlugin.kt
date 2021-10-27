@@ -24,6 +24,9 @@ import com.google.gson.reflect.TypeToken
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
+import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -42,25 +45,52 @@ import kotlin.collections.HashMap
 import kotlin.collections.Map
 import kotlin.collections.last
 import kotlin.collections.listOf
+import io.flutter.plugin.common.EventChannel
+
+import io.flutter.plugin.common.BinaryMessenger
 
 
-class FlutterAdyenPlugin(private val activity: Activity) : MethodCallHandler, PluginRegistry.ActivityResultListener {
+class FlutterAdyenPlugin() : MethodCallHandler, ActivityAware, FlutterPlugin, PluginRegistry.ActivityResultListener {
     var flutterResult: Result? = null
+
+    private var activity: Activity? = null
+    private var applicationContext: Context? = null
+    private var methodChannel: MethodChannel? = null
 
     companion object {
         @JvmStatic
         fun registerWith(registrar: Registrar) {
-            val channel = MethodChannel(registrar.messenger(), "flutter_adyen")
-            val plugin = FlutterAdyenPlugin(registrar.activity())
-            channel.setMethodCallHandler(plugin)
-            registrar.addActivityResultListener(plugin)
+            val instance = FlutterAdyenPlugin()
+            registrar.addActivityResultListener(instance)
+            instance.onAttachedToEngine(registrar.context(), registrar.messenger());
         }
     }
 
+    private fun onAttachedToEngine(applicationContext: Context, messenger: BinaryMessenger) {
+        this.applicationContext = applicationContext
+        methodChannel = MethodChannel(messenger, "flutter_adyen")
+        methodChannel?.setMethodCallHandler(this)
+    }
+    override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        this.onAttachedToEngine(binding.applicationContext, binding.binaryMessenger)
+    }
+
+    override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        applicationContext = null;
+        methodChannel?.setMethodCallHandler(null);
+        methodChannel = null;
+    }
+
     override fun onMethodCall(call: MethodCall, res: Result) {
+        val activity = this.activity
+
+        if(activity == null) {
+            res.error("ACTIVITY_NOT_BOUND", "Activity is null", "")
+            return
+        }
+
         when (call.method) {
             "openDropIn" -> {
-
                 val additionalData = call.argument<Map<String, String>>("additionalData")
                 val paymentMethods = call.argument<String>("paymentMethods")
                 val baseUrl = call.argument<String>("baseUrl")
@@ -81,13 +111,11 @@ class FlutterAdyenPlugin(private val activity: Activity) : MethodCallHandler, Pl
                 val countryCode = localeString.split("_").last()
                 val headersString = headers?.let { JSONObject(headers).toString() }
 
-                var environment = Environment.TEST
-                if (env == "LIVE_US") {
-                    environment = Environment.UNITED_STATES
-                } else if (env == "LIVE_AUSTRALIA") {
-                    environment = Environment.AUSTRALIA
-                } else if (env == "LIVE_EUROPE") {
-                    environment = Environment.EUROPE
+               val environment = when (env) {
+                    "LIVE_US" -> Environment.UNITED_STATES
+                    "LIVE_AUSTRALIA" -> Environment.AUSTRALIA
+                    "LIVE_EUROPE" -> Environment.EUROPE
+                    else -> Environment.TEST
                 }
 
                 try {
@@ -147,11 +175,38 @@ class FlutterAdyenPlugin(private val activity: Activity) : MethodCallHandler, Pl
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
-        val sharedPref = activity.getSharedPreferences("ADYEN", Context.MODE_PRIVATE)
+        Log.e("onActivityResult", "")
+        val activity = this.activity
+        val applicationContext = this.applicationContext
+
+        if(activity == null || applicationContext == null) {
+            flutterResult?.error("ACTIVITY_NOT_BOUND", "Activity is null", "")
+            return false
+        }
+
+        val sharedPref = applicationContext.getSharedPreferences("ADYEN", Context.MODE_PRIVATE)
         val storedResultCode = sharedPref.getString("AdyenResultCode", "PAYMENT_CANCELLED")
         flutterResult?.success(storedResultCode)
         flutterResult = null;
         return true
+    }
+
+    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        this.activity = binding.activity
+        binding.addActivityResultListener(this)
+    }
+
+    override fun onDetachedFromActivityForConfigChanges() {
+        this.activity = null
+    }
+
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        this.activity = binding.activity
+        binding.addActivityResultListener(this)
+    }
+
+    override fun onDetachedFromActivity() {
+        this.activity = null
     }
 
 }
