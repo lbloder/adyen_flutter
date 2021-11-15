@@ -208,10 +208,6 @@ class FlutterAdyenPlugin() : MethodCallHandler, ActivityAware, FlutterPlugin, Pl
 
 }
 
-/**
- * This is just an example on how to make network calls on the [DropInService].
- * You should make the calls to your own servers and have additional data or processing if necessary.
- */
 inline fun <reified T> Gson.fromJson(json: String) = fromJson<T>(json, object: TypeToken<T>() {}.type)
 
 
@@ -249,7 +245,7 @@ class AdyenDropinService : DropInService() {
         if (serializedPaymentComponentData.paymentMethod == null)
             DropInServiceResult.Error(reason = "Empty payment data")
 
-        val paymentsRequest = createPaymentsRequest(this@AdyenDropinService, lineItems, serializedPaymentComponentData, amount
+        val paymentsRequest = createPaymentsRequest(lineItems, serializedPaymentComponentData, amount
                 ?: "", currency ?: "", reference
                 ?: "", shopperReference = shopperReference, countryCode = countryCode
                 ?: "DE", additionalData = additionalData, merchantAccount = merchantAccount)
@@ -329,24 +325,23 @@ class AdyenDropinService : DropInService() {
             DropInServiceResult.Error(reason = "IOException")
         }
     }
-}
 
-
-fun createPaymentsRequest(context: Context, lineItems: List<LineItem>?, paymentComponentData: PaymentComponentData<out PaymentMethodDetails>, amount: String, currency: String, reference: String, shopperReference: String?, countryCode: String, additionalData: Map<String, String>?, merchantAccount: String): PaymentsRequest {
-    @Suppress("UsePropertyAccessSyntax")
-    return PaymentsRequest(
+    private fun createPaymentsRequest(lineItems: List<LineItem>?, paymentComponentData: PaymentComponentData<out PaymentMethodDetails>, amount: String, currency: String, reference: String, shopperReference: String?, countryCode: String, additionalData: Map<String, String>?, merchantAccount: String): PaymentsRequest {
+        @Suppress("UsePropertyAccessSyntax")
+        return PaymentsRequest(
             payment = Payment(paymentComponentData.getPaymentMethod() as PaymentMethodDetails,
-                    countryCode,
-                    paymentComponentData.isStorePaymentMethodEnable,
-                    getAmount(amount, currency),
-                    reference,
-                    RedirectComponent.getReturnUrl(context),
-                    lineItems = lineItems ?: emptyList(),
-                    shopperReference = shopperReference,
-                    merchantAccount = merchantAccount),
+                countryCode,
+                paymentComponentData.isStorePaymentMethodEnable,
+                getAmount(amount, currency),
+                reference,
+                RedirectComponent.getReturnUrl(applicationContext),
+                lineItems = lineItems ?: emptyList(),
+                shopperReference = shopperReference,
+                merchantAccount = merchantAccount),
             additionalData = additionalData
 
-    )
-}
+        )
+    }
 
-private fun getAmount(amount: String, currency: String) = createAmount(amount.toInt(), currency)
+    private fun getAmount(amount: String, currency: String) = createAmount(amount.toInt(), currency)
+}
