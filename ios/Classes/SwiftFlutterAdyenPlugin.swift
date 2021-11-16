@@ -151,13 +151,12 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
         DispatchQueue.main.async {
             guard let response = try? JSONDecoder().decode(PaymentsResponse.self, from: data) else {
                 self.didFail(with: PaymentError(), from: component)
+                component.stopLoading()
                 return
             }
             if let action = response.action {
-                component.stopLoading()
                 component.handle(action)
             } else {
-                component.stopLoading()
                 if response.resultCode == .authorised || response.resultCode == .received || response.resultCode == .pending, let result = self.mResult {
                     result(response.resultCode.rawValue)
                     self.topController?.dismiss(animated: false, completion: nil)
@@ -168,6 +167,8 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
                 else {
                     self.didFail(with: PaymentCancelled(), from: component)
                 }
+                // Stop loading when finishing due to success or error
+                component.stopLoading()
             }
         }
     }
