@@ -50,6 +50,7 @@ class FlutterAdyenPlugin(private val activity: Activity) : MethodCallHandler, Pl
     companion object {
         @JvmStatic
         fun registerWith(registrar: Registrar) {
+            com.adyen.checkout.core.log.Logger.setLogcatLevel(Log.DEBUG);
             val channel = MethodChannel(registrar.messenger(), "flutter_adyen")
             val plugin = FlutterAdyenPlugin(registrar.activity())
             channel.setMethodCallHandler(plugin)
