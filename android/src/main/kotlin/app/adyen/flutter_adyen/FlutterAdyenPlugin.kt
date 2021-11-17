@@ -108,6 +108,7 @@ class FlutterAdyenPlugin(private val activity: Activity) : MethodCallHandler, Pl
                     val sharedPref = activity.getSharedPreferences("ADYEN", Context.MODE_PRIVATE)
                     with(sharedPref.edit()) {
                         remove("AdyenResultCode")
+                        remove("AdyenPaymentInProgress")
                         putString("baseUrl", baseUrl)
                         putString("amount", "$amount")
                         putString("countryCode", countryCode)
@@ -172,6 +173,17 @@ class AdyenDropinService : DropInService() {
 
     override fun makePaymentsCall(paymentComponentData: JSONObject): CallResult {
         val sharedPref = getSharedPreferences("ADYEN", Context.MODE_PRIVATE)
+        val paymentInProgress = sharedPref.getBoolean("AdyenPaymentInProgress", false)
+
+        if (paymentInProgress) {
+            return CallResult(CallResult.ResultType.ERROR, "Payment in Progress")
+        }
+
+        with(sharedPref.edit()) {
+            putBoolean("AdyenPaymentInProgress", true)
+            commit()
+        }
+
         val baseUrl = sharedPref.getString("baseUrl", "UNDEFINED_STR")
         val amount = sharedPref.getString("amount", "UNDEFINED_STR")
         val currency = sharedPref.getString("currency", "UNDEFINED_STR")
