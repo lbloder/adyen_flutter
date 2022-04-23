@@ -5,13 +5,12 @@ homepage: https://github.com/intive-opensource/adyen_flutter
 
 
 environment:
-  sdk: ">=2.8.0 <3.0.0"
+  sdk: ">=2.12.0 <3.0.0"
   flutter: ">=1.12.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  uuid: ^2.2.2
 
 dev_dependencies:
   flutter_test:

@@ -16,7 +16,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   String _payment_result = 'Unknown';
 
-  String dropInResponse;
+  String dropInResponse = "";
 
   @override
   Widget build(BuildContext context) {
@@ -27,15 +27,22 @@ class _MyAppState extends State<MyApp> {
           onPressed: () async {
             try {
               dropInResponse = await FlutterAdyen.openDropIn(
+                  merchantAccount: '<Your Merchant Account>',
+                  reference: '<Your payment reference>',
                   paymentMethods: jsonEncode(examplePaymentMethods),
                   baseUrl: 'https://yourdomain.com',
                   clientKey: 'clientkey',
-                  publicKey: 'publickey',
                   locale: 'de_DE',
                   shopperReference: 'asdasda',
                   returnUrl: 'http://asd.de',
                   amount: '1230',
-                  lineItem: {'id': '1', 'description': 'adyen test'},
+                  lineItem: [LineItem(
+                    quantity: 2,
+                    amountIncludingTax: 15,
+                    id: "1",
+                    description: "Product",
+                    taxPercentage: 20,
+                  )],
                   currency: 'EUR',
                   additionalData: {});
             } on PlatformException catch (e) {
