@@ -3,21 +3,22 @@ import UIKit
 import Adyen
 import Adyen3DS2
 import Foundation
+import AdyenNetworking
 
 struct PaymentError: Error {
-    
+
 }
 struct PaymentCancelled: Error {
-    
+
 }
 public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
-    
+
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "flutter_adyen", binaryMessenger: registrar.messenger())
         let instance = SwiftFlutterAdyenPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
-    
+
     var dropInComponent: DropInComponent?
     var baseURL: String?
     var authToken: String?
@@ -42,6 +43,7 @@ public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
         let arguments = call.arguments as? [String: Any]
         let paymentMethodsResponse = arguments?["paymentMethods"] as? String
         let rawBaseURL = arguments?["baseUrl"] as? String
+        merchantAccount = arguments?["merchantAccount"] as? String
         additionalData = arguments?["additionalData"] as? [String: String]
         clientKey = arguments?["clientKey"] as? String
         currency = arguments?["currency"] as? String
@@ -53,7 +55,6 @@ public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
         shopperReference = arguments?["shopperReference"] as? String
         shopperLocale = String((arguments?["locale"] as? String)?.split(separator: "_").last ?? "DE")
         headers = arguments?["headers"] as? [String: String]
-        merchantAccount = arguments?["merchantAccount"] as? String
         mResult = result
 
         guard let rawUrl = rawBaseURL else {
@@ -71,26 +72,26 @@ public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
             return
         }
 
-        let configuration = DropInComponent.PaymentMethodsConfiguration()
-        configuration.card.showsHolderNameField = true
-        configuration.clientKey = clientKey
-        dropInComponent = DropInComponent(paymentMethods: paymentMethods, paymentMethodsConfiguration: configuration)
-        
-        if let paymentCurrency = currency, let amountString = amount, let paymentAmount = Int(amountString) {
-            dropInComponent?.payment = Adyen.Payment(amount: Adyen.Payment.Amount(value: paymentAmount,
-                                                                     currencyCode: paymentCurrency))
-        }
-    
-        dropInComponent?.delegate = self
-        dropInComponent?.environment = .test
-
+        var ctx = Environment.test
         if(environment == "LIVE_US") {
-            dropInComponent?.environment = .liveUnitedStates
+            ctx = Environment.liveUnitedStates
         } else if (environment == "LIVE_AUSTRALIA"){
-            dropInComponent?.environment = .liveAustralia
+            ctx = Environment.liveAustralia
         } else if (environment == "LIVE_EUROPE"){
-            dropInComponent?.environment = .liveEurope
+            ctx = Environment.liveEurope
         }
+
+        let dropInComponentStyle = DropInComponent.Style()
+
+        let apiContext = APIContext(environment: ctx, clientKey: clientKey!)
+        let configuration = DropInComponent.Configuration(apiContext: apiContext);
+        configuration.card.showsHolderNameField = true
+        if let paymentCurrency = currency, let amountString = amount, let paymentAmount = Int(amountString) {
+            configuration.payment = Adyen.Payment(amount: Adyen.Amount(value: paymentAmount, currencyCode: paymentCurrency), countryCode: shopperLocale ?? "DE")
+        }
+        dropInComponent = DropInComponent(paymentMethods: paymentMethods, configuration: configuration, style: dropInComponentStyle)
+
+        dropInComponent?.delegate = self
 
 
         if var topController = UIApplication.shared.keyWindow?.rootViewController, let dropIn = dropInComponent {
@@ -105,11 +106,15 @@ public class SwiftFlutterAdyenPlugin: NSObject, FlutterPlugin {
 
 extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
 
-    public func didCancel(component: PresentableComponent, from dropInComponent: DropInComponent) {
+    public func didComplete(from component: DropInComponent) {
+        component.stopLoadingIfNeeded()
+    }
+
+    public func didCancel(component: PaymentComponent, from dropInComponent: DropInComponent) {
         self.didFail(with: PaymentCancelled(), from: dropInComponent)
     }
 
-    public func didSubmit(_ data: PaymentComponentData, from component: DropInComponent) {
+    public func didSubmit(_ data: PaymentComponentData, for paymentMethod: PaymentMethod, from component: DropInComponent) {
         guard let baseURL = baseURL, let url = URL(string: baseURL + "/payments") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -125,7 +130,19 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
             self.didFail(with: PaymentError(), from: component)
             return
         }
-        let paymentRequest = PaymentRequest(payment: Payment( paymentMethod: paymentMethod, lineItems: lineItems ?? [], currency: currency ?? "", amount: amountAsInt ?? 0, returnUrl: returnUrl ?? "", storePayment: data.storePaymentMethod, shopperReference: shopperReference, reference: reference, countryCode: shopperLocale, merchantAccount: merchantAccount ?? ""), additionalData:additionalData ?? [String: String]())
+        let paymentRequest = PaymentRequest(
+                payment: Payment(
+                        paymentMethod: paymentMethod,
+                        lineItems: lineItems ?? [],
+                        currency: currency ?? "",
+                        amount: amountAsInt ?? 0,
+                        returnUrl: returnUrl ?? "",
+                        storePayment: data.storePaymentMethod,
+                        shopperReference: shopperReference,
+                        reference: reference,
+                        countryCode: shopperLocale,
+                        merchantAccount: merchantAccount ?? ""),
+                additionalData:additionalData ?? [String: String]())
 
         do {
             let jsonData = try JSONEncoder().encode(paymentRequest)
@@ -139,8 +156,6 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
                     self.didFail(with: PaymentError(), from: component)
                 }
             }.resume()
-
-
         } catch {
             didFail(with: PaymentError(), from: component)
         }
@@ -151,7 +166,7 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
         DispatchQueue.main.async {
             guard let response = try? JSONDecoder().decode(PaymentsResponse.self, from: data) else {
                 self.didFail(with: PaymentError(), from: component)
-                component.stopLoading()
+                component.stopLoadingIfNeeded()
                 return
             }
             if let action = response.action {
@@ -168,13 +183,13 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
                     self.didFail(with: PaymentCancelled(), from: component)
                 }
                 // Stop loading when finishing due to success or error
-                component.stopLoading()
+                component.stopLoadingIfNeeded()
             }
         }
     }
 
     public func didProvide(_ data: ActionComponentData, from component: DropInComponent) {
-        guard let baseURL = baseURL, let url = URL(string: baseURL + "/payments/details") else { return }
+        guard let baseURL = baseURL, let url = URL(string: baseURL + "payments/details") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -200,7 +215,6 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
     }
 
     public func didFail(with error: Error, from component: DropInComponent) {
-
         DispatchQueue.main.async {
             if (error is PaymentCancelled) {
                 self.mResult?("PAYMENT_CANCELLED")
@@ -228,7 +242,7 @@ struct Payment : Encodable {
     let paymentMethod: AnyEncodable
     let lineItems: [LineItem]
     let channel: String = "iOS"
-    let additionalData = ["allow3DS2":"true"]
+    let additionalData = ["allow3DS2" : "true", "executeThreeD" : "true"] //TODO should executeThreeD be set by default?
     let amount: Amount
     let reference: String
     let returnUrl: String
@@ -243,10 +257,10 @@ struct Payment : Encodable {
         self.amount = Amount(currency: currency, value: amount)
         self.returnUrl = returnUrl
         self.shopperReference = shopperReference
-        self.reference = reference ?? UUID().uuidString
         self.storePaymentMethod = storePayment
         self.countryCode = countryCode
         self.merchantAccount = merchantAccount
+        self.reference = reference ?? UUID().uuidString
     }
 }
 
@@ -297,6 +311,7 @@ internal extension PaymentsResponse {
         case redirectShopper = "RedirectShopper"
         case identifyShopper = "IdentifyShopper"
         case challengeShopper = "ChallengeShopper"
+        case presentToShopper = "PresentToShopper"
     }
 
 }

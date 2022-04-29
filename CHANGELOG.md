@@ -1,3 +1,14 @@
+## 0.10.0
+* updated Adyen SDK Android to 4.4.0
+* removed jCenter dependency by replacing it for MavenCentral
+* added support for Android Flutter EmbeddingV2
+
+## 0.9.0
+* updated adyen dropin to 3.9.1
+
+## 0.8.0
+* migrated to nullsafety
+
 ## 0.7.1
 * removed option from iOS SDK to disable 3dSecure1 since it has not effect and is not documented by adyen
 
