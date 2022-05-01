@@ -8,6 +8,9 @@
 
 package app.adyen.flutter_adyen.models
 
+import com.squareup.moshi.JsonClass
+
+@JsonClass(generateAdapter = true)
 data class LineItem(
     val quantity: Int?,
     val amountExcludingTax: Int?,

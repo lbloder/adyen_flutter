@@ -12,7 +12,6 @@ import com.adyen.checkout.components.model.paymentmethods.InputDetail
 import com.adyen.checkout.components.model.payments.request.*
 import com.adyen.checkout.components.model.payments.response.*
 import android.util.Log
-import com.jakewharton.retrofit2.adapter.kotlin.coroutines.CoroutineCallAdapterFactory
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapters.PolymorphicJsonAdapterFactory
 import okhttp3.*
@@ -66,7 +65,6 @@ fun getService(headers: Map<String, String>, baseUrl: String): CheckoutApiServic
     val retrofit = Retrofit.Builder()
             .baseUrl(baseUrl)
             .addConverterFactory(converter)
-            .addCallAdapterFactory(CoroutineCallAdapterFactory())
             .client(client)
             .build()
 

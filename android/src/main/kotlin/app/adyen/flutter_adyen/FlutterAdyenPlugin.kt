@@ -104,8 +104,8 @@ class FlutterAdyenPlugin() : MethodCallHandler, ActivityAware, FlutterPlugin, Pl
 
                 @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
                 val additionalDataString = additionalData?.let { JSONObject(additionalData).toString() }
-                val localeString = call.argument<String>("locale") ?: "de_DE"
-                val countryCode = localeString.split("_").last()
+                val localeString = call.argument<String>("locale")?.replace("_", "-") ?: "de-DE"
+                val countryCode = localeString.split("-").last()
                 val headersString = headers?.let { JSONObject(headers).toString() }
 
                val environment = when (env) {
@@ -120,7 +120,8 @@ class FlutterAdyenPlugin() : MethodCallHandler, ActivityAware, FlutterPlugin, Pl
                     val paymentMethodsApiResponse = PaymentMethodsApiResponse.SERIALIZER.deserialize(jsonObject)
                     print("##########")
                     print(localeString)
-                    val shopperLocale = LocaleUtil.fromLanguageTag(localeString ?: "")
+                    Log.e("TAG", localeString)
+                    val shopperLocale = LocaleUtil.fromLanguageTag(localeString)
                     val cardConfiguration = CardConfiguration.Builder(activity, clientKey ?: "")
                             .setHolderNameRequired(true)
                             .setShopperLocale(shopperLocale)
@@ -149,6 +150,7 @@ class FlutterAdyenPlugin() : MethodCallHandler, ActivityAware, FlutterPlugin, Pl
 
                     val dropInConfigurationBuilder = DropInConfiguration.Builder(activity, AdyenDropinService::class.java, clientKey ?: "")
                             .addCardConfiguration(cardConfiguration)
+                            .setShopperLocale(shopperLocale)
                             .setEnvironment(environment)
 
                     if (currency != null && amount != null) {
