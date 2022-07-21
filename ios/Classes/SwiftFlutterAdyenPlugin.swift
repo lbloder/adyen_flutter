@@ -189,7 +189,7 @@ extension SwiftFlutterAdyenPlugin: DropInComponentDelegate {
     }
 
     public func didProvide(_ data: ActionComponentData, from component: DropInComponent) {
-        guard let baseURL = baseURL, let url = URL(string: baseURL + "payments/details") else { return }
+        guard let baseURL = baseURL, let url = URL(string: baseURL + "/payments/details") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
